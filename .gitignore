@@ -1,0 +1,87 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Snowflake credentials (IMPORTANT!)
+snowflake/snowflake_config.json
+snowflake_config.json
+.streamlit/secrets.toml
+
+# Private keys (CRITICAL - NEVER COMMIT!)
+*.p8
+*.pem
+*_rsa_key*
+snowflake_rsa_key*
+snowflake/*_rsa_key*
+snowflake/*.p8
+snowflake/*.pem
+
+# Model files
+models/
+*.pkl
+*.joblib
+
+# Log files
+logs/*.log
+logs/*.txt
+!logs/test.txt
+
+# Output files
+anomalies.csv
+detected_anomalies.csv
+
+# Flask
+instance/
+.webassets-cache
+
+# Charts
+static/anomaly_chart.png
+
+# Environment variables
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/

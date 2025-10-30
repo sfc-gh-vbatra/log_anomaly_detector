@@ -1,0 +1,12 @@
+{
+  "account": "your_account.region",
+  "user": "your_username",
+  "authenticator": "SNOWFLAKE_JWT",
+  "private_key_path": "/path/to/your/rsa_key.p8",
+  "private_key_passphrase": "your_passphrase_if_encrypted",
+  "role": "your_role",
+  "warehouse": "LOG_ANALYZER_WH",
+  "database": "LOG_ANALYTICS",
+  "schema": "ANOMALY_DETECTION"
+}
+

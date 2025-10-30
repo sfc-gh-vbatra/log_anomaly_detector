@@ -1,0 +1,33 @@
+# Snowflake Log Analyzer Requirements
+# Core dependencies with text vectorization and ML capabilities
+
+# Snowflake connectivity
+snowflake-snowpark-python>=1.11.0
+snowflake-connector-python>=3.6.0
+
+# ML and Vectorization
+scikit-learn>=1.3.0
+numpy>=1.24.0
+pandas>=2.0.0
+scipy>=1.11.0
+
+# Text processing
+nltk>=3.8.0
+
+# Model persistence
+joblib>=1.3.0
+
+# Streamlit UI
+streamlit>=1.29.0
+plotly>=5.18.0
+
+# Original Flask dependencies (if still using Flask interface)
+Flask>=3.0.0
+matplotlib>=3.8.0
+
+# Configuration management
+python-dotenv>=1.0.0
+
+# Additional utilities
+requests>=2.31.0
+
