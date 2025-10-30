@@ -80,18 +80,144 @@ streamlit run streamlit_app.py
 
 ```
 snowflake/
-├── setup.sql                      # Snowflake database setup
-├── snowpark_analyzer.py           # Main ML engine (TF-IDF + Isolation Forest)
-├── streamlit_app.py              # Interactive dashboard with cluster viz
-├── stored_procedures.sql         # SQL callable procedures
-├── upload_logs.py                # Efficient log uploader
-├── test_connection.py            # Connection tester
+├── setup.sql                      # Snowflake database setup (tables, stages, views)
+├── snowpark_analyzer.py           # ⭐ Main ML engine (TF-IDF + Isolation Forest)
+├── streamlit_app.py              # Interactive dashboard with cluster visualization
+├── stored_procedures.sql         # ⭐ SQL callable procedures for Snowflake
+├── upload_logs.py                # Efficient log uploader with bulk insert
+├── test_connection.py            # Connection tester for key-pair auth
 ├── explain_anomalies.py          # Anomaly explainability tool
-├── setup_keypair_auth.py         # Key-pair authentication setup
+├── setup_keypair_auth.py         # Key-pair authentication generator
 ├── quick_start.py                # Automated testing script
 ├── snowflake_config.json.example # Configuration template
 ├── KEYPAIR_AUTH_SETUP.md         # Security guide
 └── README.md                     # Quick reference
+```
+
+### Core Components
+
+#### 🔬 `snowpark_analyzer.py` - The ML Engine
+
+The heart of the system. Contains the `SnowparkLogAnalyzer` class with:
+
+**Key Methods:**
+- `parse_log_structure()` - Extracts timestamp, level, message from raw logs
+- `extract_features_and_vectorize()` - Creates 112-dimensional feature space
+  - 12 structured features (errors, patterns, frequency)
+  - 100 TF-IDF features (semantic text analysis)
+- `run_full_pipeline()` - End-to-end analysis (parse → vectorize → detect → save)
+- `save_model()` / `load_model()` - Model persistence for reuse
+
+**Key Features:**
+```python
+# TF-IDF Vectorizer configuration
+TfidfVectorizer(
+    max_features=100,      # Configurable (50-500)
+    min_df=2,              # Ignore rare terms
+    max_df=0.8,            # Ignore common terms
+    ngram_range=(1, 2),    # Unigrams + bigrams
+    stop_words='english'   # Filter common words
+)
+
+# Isolation Forest configuration
+IsolationForest(
+    n_estimators=100,           # Number of trees
+    contamination=0.1,          # Expected anomaly rate
+    random_state=42,            # Reproducibility
+    max_samples='auto'          # Subsample size
+)
+```
+
+**Usage:**
+```python
+from snowpark_analyzer import SnowparkLogAnalyzer, load_snowflake_config
+
+config = load_snowflake_config('snowflake_config.json')
+session = Session.builder.configs(config).create()
+
+analyzer = SnowparkLogAnalyzer(session)
+results = analyzer.run_full_pipeline(
+    file_name='app.log',      # Specific file or None for all
+    contamination=0.1,        # 10% expected anomalies
+    max_features=100          # TF-IDF features
+)
+
+# Access results
+anomalies = results[results['is_anomaly'] == True]
+print(f"Found {len(anomalies)} anomalies")
+```
+
+#### 📊 `stored_procedures.sql` - SQL Interface
+
+Three main stored procedures for native Snowflake execution:
+
+##### 1. `parse_raw_logs(FILE_NAME_FILTER VARCHAR)`
+Parses raw logs into structured format.
+
+```sql
+-- Parse all logs
+CALL parse_raw_logs('ALL');
+
+-- Parse specific file
+CALL parse_raw_logs('server.log');
+```
+
+**What it does:**
+- Extracts log level (ERROR, WARNING, INFO, etc.)
+- Removes timestamps
+- Populates `parsed_logs` table
+
+##### 2. `detect_log_anomalies(FILE_NAME_FILTER, CONTAMINATION, MAX_FEATURES)`
+The main anomaly detection procedure with TF-IDF vectorization.
+
+```sql
+-- Analyze all logs with 10% contamination, 100 TF-IDF features
+CALL detect_log_anomalies('ALL', 0.1, 100);
+
+-- Analyze specific file with 15% contamination, 200 features
+CALL detect_log_anomalies('security.log', 0.15, 200);
+```
+
+**Parameters:**
+- `FILE_NAME_FILTER` - File to analyze or 'ALL'
+- `CONTAMINATION` - Expected anomaly proportion (0.01 to 0.5)
+- `MAX_FEATURES` - Number of TF-IDF features (50-500)
+
+**What it does:**
+- Loads parsed logs
+- Extracts 12 structured features
+- Applies TF-IDF vectorization (100 features by default)
+- Standardizes features
+- Trains Isolation Forest
+- Saves results to `anomaly_results` table
+- Records run metadata in `anomaly_runs` table
+
+##### 3. `process_log_file(STAGE_NAME, FILE_PATTERN, CONTAMINATION)`
+End-to-end processing from stage to results.
+
+```sql
+-- Process a file from stage
+CALL process_log_file('log_files_stage', 'application.log', 0.1);
+```
+
+**What it does:**
+- Loads logs from Snowflake stage
+- Parses logs
+- Runs anomaly detection
+- Returns completion status
+
+**Example Workflow:**
+```sql
+-- 1. Upload log to stage (via SnowSQL or UI)
+PUT file:///path/to/app.log @log_files_stage;
+
+-- 2. Process the file
+CALL process_log_file('log_files_stage', 'app.log', 0.1);
+
+-- 3. View results
+SELECT * FROM anomaly_results 
+WHERE is_anomaly = TRUE 
+ORDER BY anomaly_probability DESC;
 ```
 
 ## 🔐 Security: Key-Pair Authentication
